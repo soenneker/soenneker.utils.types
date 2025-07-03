@@ -9,7 +9,7 @@ using Soenneker.Extensions.String;
 namespace Soenneker.Utils.Types;
 
 /// <inheritdoc cref="ITypesUtil"/>
-public class TypesUtil: ITypesUtil
+public sealed class TypesUtil: ITypesUtil
 {
     private readonly ConcurrentDictionary<string, Type> _typeCache = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, List<Assembly>> _assembliesCache = new(StringComparer.Ordinal);
