@@ -1,20 +1,19 @@
-﻿using Soenneker.Utils.Types.Abstract;
-using Soenneker.Tests.FixturedUnit;
-using Xunit;
+using Soenneker.Utils.Types.Abstract;
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.Utils.Types.Tests;
 
-[Collection("Collection")]
-public class TypesUtilTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public class TypesUtilTests : HostedUnitTest
 {
     private readonly ITypesUtil _util;
 
-    public TypesUtilTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public TypesUtilTests(Host host) : base(host)
     {
         _util = Resolve<ITypesUtil>(true);
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
