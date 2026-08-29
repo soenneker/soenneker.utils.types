@@ -12,6 +12,7 @@ public static class TypesUtilRegistrar
     /// <summary>
     /// Adds <see cref="ITypesUtil"/> as a singleton service. <para/>
     /// </summary>
+    /// <returns>Adds <see cref="ITypesUtil"/> as a singleton service. <para/>.</returns>
     public static IServiceCollection AddTypesUtilAsSingleton(this IServiceCollection services)
     {
         services.TryAddSingleton<ITypesUtil, TypesUtil>();
@@ -22,6 +23,7 @@ public static class TypesUtilRegistrar
     /// <summary>
     /// Adds <see cref="ITypesUtil"/> as a scoped service. <para/>
     /// </summary>
+    /// <returns>Adds <see cref="ITypesUtil"/> as a scoped service. <para/>.</returns>
     public static IServiceCollection AddTypesUtilAsScoped(this IServiceCollection services)
     {
         services.TryAddScoped<ITypesUtil, TypesUtil>();
