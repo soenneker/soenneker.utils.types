@@ -21,6 +21,7 @@ namespace Soenneker.Utils.Types;
 /// </list>
 /// Cache keys are solution-scoped to prevent cross-solution type collisions.
 /// </remarks>
+/// <inheritdoc cref="ITypesUtil" />
 public sealed class TypesUtil : ITypesUtil
 {
     private static readonly StringComparison _ordIgnore = StringComparison.OrdinalIgnoreCase;
