@@ -24,7 +24,7 @@ namespace Soenneker.Utils.Types;
 /// <inheritdoc cref="ITypesUtil" />
 public sealed class TypesUtil : ITypesUtil
 {
-    private static readonly StringComparison _ordIgnore = StringComparison.OrdinalIgnoreCase;
+    private const StringComparison _ordIgnore = StringComparison.OrdinalIgnoreCase;
 
     // solutionName -> assemblies
     private readonly ConcurrentDictionary<string, Assembly[]> _assembliesCache = new(StringComparer.Ordinal);
@@ -177,8 +177,7 @@ public sealed class TypesUtil : ITypesUtil
         {
             foreach (Type type in GetTypesSafely(assemblies[i]))
             {
-                if (!index.ContainsKey(type.Name))
-                    index.Add(type.Name, type);
+                index.TryAdd(type.Name, type);
             }
         }
 
