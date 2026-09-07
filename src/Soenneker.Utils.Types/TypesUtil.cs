@@ -17,7 +17,7 @@ namespace Soenneker.Utils.Types;
 /// <list type="bullet">
 /// <item>Assemblies are cached per solution name.</item>
 /// <item>Types are indexed once per solution for O(1) lookup.</item>
-/// <item>Negative lookups are memoized to avoid repeated reflection scans.</item>
+/// <item>The completed type index also resolves negative lookups without reflection scans.</item>
 /// </list>
 /// Cache keys are solution-scoped to prevent cross-solution type collisions.
 /// </remarks>
@@ -32,9 +32,6 @@ public sealed class TypesUtil : ITypesUtil
     // solutionName -> (typeName -> Type)
     private readonly ConcurrentDictionary<string, Dictionary<string, Type>> _solutionTypeIndexCache = new(StringComparer.Ordinal);
 
-    // (solutionName, typeName) -> miss marker
-    private readonly ConcurrentDictionary<(string Solution, string Name), byte> _missCache = new();
-
     [Pure]
     public Type? GetTypeByNameCached(string className, string solutionName, List<Assembly>? assemblies = null)
     {
@@ -47,11 +44,6 @@ public sealed class TypesUtil : ITypesUtil
         // Explicit assemblies => direct scan, no caching assumptions
         if (assemblies is { Count: > 0 })
             return GetTypeByNameFromAssemblies(className, assemblies);
-
-        var missKey = (solutionName, className);
-
-        if (_missCache.ContainsKey(missKey))
-            return null;
 
         Dictionary<string, Type> index = _solutionTypeIndexCache.GetOrAdd(
             solutionName,
@@ -66,7 +58,6 @@ public sealed class TypesUtil : ITypesUtil
         if (index.TryGetValue(className, out Type? type))
             return type;
 
-        _missCache.TryAdd(missKey, 0);
         return null;
     }
 
@@ -171,7 +162,7 @@ public sealed class TypesUtil : ITypesUtil
 
     private static Dictionary<string, Type> BuildTypeIndex(Assembly[] assemblies)
     {
-        var index = new Dictionary<string, Type>(2048, StringComparer.OrdinalIgnoreCase);
+        var index = new Dictionary<string, Type>(assemblies.Length == 0 ? 0 : 2048, StringComparer.OrdinalIgnoreCase);
 
         for (var i = 0; i < assemblies.Length; i++)
         {
