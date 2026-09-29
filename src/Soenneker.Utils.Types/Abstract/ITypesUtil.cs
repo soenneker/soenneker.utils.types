@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -9,6 +10,18 @@ namespace Soenneker.Utils.Types.Abstract;
 /// </summary>
 public interface ITypesUtil
 {
+    /// <summary>Replaces a solution's explicitly registered types without scanning assemblies.</summary>
+    /// <param name="solutionName">The scope used for subsequent lookups.</param>
+    /// <param name="types">Known types, normally supplied using typeof expressions. The first duplicate simple name wins.</param>
+    /// <remarks>Registration preserves type identity, not arbitrary reflected members. Register before querying; each update replaces the complete scope atomically.</remarks>
+    void RegisterTypes(string solutionName, IEnumerable<Type> types);
+
+    /// <summary>Finds a registered type by its case-insensitive simple name without reflection scans.</summary>
+    /// <param name="className">The simple type name.</param>
+    /// <param name="solutionName">The registered scope.</param>
+    /// <returns>The registered type, or null if the scope or name is not registered.</returns>
+    Type? GetRegisteredTypeByName(string className, string solutionName);
+
     /// <summary>
     /// Retrieves a <see cref="Type"/> by its simple (non-namespace-qualified) name using cached indexes.
     /// </summary>
@@ -25,6 +38,7 @@ public interface ITypesUtil
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="className"/> or <paramref name="solutionName"/> is null, empty, or whitespace.
     /// </exception>
+    [RequiresUnreferencedCode("Assembly scanning cannot discover types removed by trimming. Use RegisterTypes and GetRegisteredTypeByName in trimmed applications.")]
     Type? GetTypeByNameCached(string className, string solutionName, List<Assembly>? assemblies = null);
 
     /// <summary>

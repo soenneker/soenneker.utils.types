@@ -3,27 +3,36 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Soenneker.Extensions.String;
 
 namespace Soenneker.Utils.Types;
 
-/// <summary>
-/// High-performance utilities for resolving <see cref="Type"/> instances by simple (non-qualified) name
-/// across solution-scoped assemblies.
-/// </summary>
-/// <remarks>
-/// Optimized for repeated lookups:
-/// <list type="bullet">
-/// <item>Assemblies are cached per solution name.</item>
-/// <item>Types are indexed once per solution for O(1) lookup.</item>
-/// <item>The completed type index also resolves negative lookups without reflection scans.</item>
-/// </list>
-/// Cache keys are solution-scoped to prevent cross-solution type collisions.
-/// </remarks>
-/// <inheritdoc cref="ITypesUtil" />
 public sealed class TypesUtil : ITypesUtil
 {
+    private readonly ConcurrentDictionary<string, Dictionary<string, Type>> _registeredTypes = new(StringComparer.Ordinal);
+
+    public void RegisterTypes(string solutionName, IEnumerable<Type> types)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(solutionName);
+        ArgumentNullException.ThrowIfNull(types);
+        var index = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+        foreach (Type type in types)
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            index.TryAdd(type.Name, type);
+        }
+        _registeredTypes[solutionName] = index;
+    }
+
+    public Type? GetRegisteredTypeByName(string className, string solutionName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(className);
+        ArgumentException.ThrowIfNullOrWhiteSpace(solutionName);
+        return _registeredTypes.TryGetValue(solutionName, out Dictionary<string, Type>? index) && index.TryGetValue(className, out Type? type) ? type : null;
+    }
+
     private const StringComparison _ordIgnore = StringComparison.OrdinalIgnoreCase;
 
     // solutionName -> assemblies
@@ -33,6 +42,7 @@ public sealed class TypesUtil : ITypesUtil
     private readonly ConcurrentDictionary<string, Dictionary<string, Type>> _solutionTypeIndexCache = new(StringComparer.Ordinal);
 
     [Pure]
+    [RequiresUnreferencedCode("Assembly scanning cannot discover types removed by trimming. Use RegisterTypes and GetRegisteredTypeByName in trimmed applications.")]
     public Type? GetTypeByNameCached(string className, string solutionName, List<Assembly>? assemblies = null)
     {
         if (className.IsNullOrWhiteSpace())
@@ -87,6 +97,7 @@ public sealed class TypesUtil : ITypesUtil
     /// Thrown when <paramref name="className"/> or <paramref name="solutionName"/> is null, empty, or whitespace.
     /// </exception>
     [Pure]
+    [RequiresUnreferencedCode("Assembly scanning cannot discover types removed by trimming. Use RegisterTypes and GetRegisteredTypeByName in trimmed applications.")]
     public static Type? GetTypeByName(string className, string solutionName, List<Assembly>? assemblies = null)
     {
         if (className.IsNullOrWhiteSpace())
@@ -146,6 +157,7 @@ public sealed class TypesUtil : ITypesUtil
         });
     }
 
+    [RequiresUnreferencedCode("Assembly scanning cannot discover types removed by trimming. Use RegisterTypes and GetRegisteredTypeByName in trimmed applications.")]
     private static Type? GetTypeByNameFromAssemblies(string className, List<Assembly> assemblies)
     {
         for (var i = 0; i < assemblies.Count; i++)
@@ -160,6 +172,7 @@ public sealed class TypesUtil : ITypesUtil
         return null;
     }
 
+    [RequiresUnreferencedCode("Assembly scanning cannot discover types removed by trimming. Use RegisterTypes and GetRegisteredTypeByName in trimmed applications.")]
     private static Dictionary<string, Type> BuildTypeIndex(Assembly[] assemblies)
     {
         var index = new Dictionary<string, Type>(assemblies.Length == 0 ? 0 : 2048, StringComparer.OrdinalIgnoreCase);
@@ -184,6 +197,7 @@ public sealed class TypesUtil : ITypesUtil
     /// Handles <see cref="ReflectionTypeLoadException"/> by returning only non-null types.
     /// Avoids LINQ to minimize allocations.
     /// </remarks>
+    [RequiresUnreferencedCode("Assembly scanning cannot discover types removed by trimming. Use RegisterTypes and GetRegisteredTypeByName in trimmed applications.")]
     private static IEnumerable<Type> GetTypesSafely(Assembly assembly)
     {
         try
